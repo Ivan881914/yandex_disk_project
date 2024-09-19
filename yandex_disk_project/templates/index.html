@@ -1,0 +1,81 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Просмотрщик файлов Яндекс.Диска</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/styles.css' %}">
+    <script src="{% static 'js/scripts.js' %}"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Просмотрщик файлов Яндекс.Диска</h1>
+
+        <!-- Форма для ввода публичной ссылки -->
+        <form method="POST">
+            {% csrf_token %}
+            <label for="public_key">Ссылка на Яндекс.Диск:</label>
+            <input type="text" id="public_key" name="public_key" placeholder="Введите публичную ссылку" required>
+            <button type="submit">Найти файлы</button>
+        </form>
+
+        <!-- Сообщение об ошибке, если что-то пошло не так -->
+        {% if error_message %}
+            <p class="error">{{ error_message }}</p>
+        {% endif %}
+
+        <!-- Если файлы найдены, выводим их в виде таблицы -->
+        {% if files %}
+            <h2>Найденные файлы</h2>
+
+            <label for="file-type-filter">Фильтр по типу файлов:</label>
+            <select id="file-type-filter" onchange="filterFiles()">
+                <option value="all">Все файлы</option>
+                <option value="image">Изображения</option>
+                <option value="video">Видео</option>
+                <option value="application">Документы</option>
+                <option value="audio">Аудио</option>
+            </select>
+            <br><br>
+
+            <form method="POST" action="{% url 'download_files' %}">
+                {% csrf_token %}
+                <table class="file-table">
+                    <thead>
+                        <tr>
+                            <th>Выбор</th>
+                            <th>Название файла</th>
+                            <th>Размер</th>
+                            <th>Скачать</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for file in files %}
+                        <tr class="file-item" data-mime-type="{{ file.mime_type }}">
+                            <td><input type="checkbox" name="selected_files" value="{{ file.download_link }}"></td>
+                            <td class="file-name">{{ file.name }}</td>
+                            <td class="file-size">{{ file.size|filesizeformat }}</td>
+                            <td class="file-download">
+                                {% if file.download_link %}
+                                    <a href="{{ file.download_link }}" target="_blank" class="download-icon">
+                                        &#x2B07; <!-- Символ стрелки вниз -->
+                                    </a>
+                                {% else %}
+                                    (Загрузка недоступна)
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <br>
+                <button type="button" onclick="selectAll()">Выбрать все файлы</button>
+                <button type="button" onclick="deselectAll()">Снять выделение</button>
+                <br><br>
+                <button type="submit">Скачать выбранные файлы</button>
+            </form>
+        {% endif %}
+    </div>
+</body>
+</html>
